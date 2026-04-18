@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:favorite_places/helpers/static_map_url.dart';
 import 'package:favorite_places/models/place.dart';
+import 'package:favorite_places/screens/map.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
@@ -36,45 +37,8 @@ class _LocationInputState extends State<LocationInput> {
   bool isLoading = false;
   String? formattedAddress;
 
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _getCurrentLocation() async {
-    final Location location = Location();
-
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
-    LocationData? locationData;
-    double? longitude;
-    double? latitude;
-
-    serviceEnabled = await location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
-    }
-
-    permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    if (!mounted) return;
-    setState(() => isLoading = true);
-
+  void _savePlace(double? latitude, double? longitude) async {
     try {
-      locationData = await location.getLocation();
-      longitude = locationData.longitude;
-      latitude = locationData.latitude;
       final response = await http.get(
         geocodeRequestUri(
           latitude: latitude!,
@@ -128,6 +92,60 @@ class _LocationInputState extends State<LocationInput> {
     }
   }
 
+  void _selectOnMap() async {
+    final PlaceLocation? pickedLocation =
+        await Navigator.of(context).push<PlaceLocation>(
+      MaterialPageRoute(
+        builder: (ctx) =>
+            MapScreen(location: _pickedLocation, isSelecting: true),
+      ),
+    );
+
+    if (pickedLocation == null) return;
+    _savePlace(pickedLocation.latitude, pickedLocation.longitude);
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _getCurrentLocation() async {
+    final Location location = Location();
+
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData? locationData;
+    double? longitude;
+    double? latitude;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => isLoading = true);
+
+    locationData = await location.getLocation();
+    longitude = locationData.longitude;
+    latitude = locationData.latitude;
+    _savePlace(latitude, longitude);
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget previewContent = Text(
@@ -174,7 +192,7 @@ class _LocationInputState extends State<LocationInput> {
               label: const Text('Pick Location'),
             ),
             TextButton.icon(
-              onPressed: () {},
+              onPressed: _selectOnMap,
               icon: const Icon(Icons.map),
               label: const Text('Select on Map'),
             ),
