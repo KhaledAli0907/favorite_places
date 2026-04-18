@@ -1,3 +1,4 @@
+import 'package:favorite_places/helpers/static_map_url.dart';
 import 'package:flutter/material.dart';
 
 import 'package:favorite_places/models/place.dart';
@@ -6,6 +7,10 @@ class PlaceDetailScreen extends StatelessWidget {
   const PlaceDetailScreen({super.key, required this.place});
 
   final Place place;
+
+  String get locationImage {
+    return staticMapPreviewUrl(place.location);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +31,29 @@ class PlaceDetailScreen extends StatelessWidget {
             right: 0,
             child: Column(
               children: [
-                Text(
-                  place.title,
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                        color: Colors.white,
-                      ),
+                CircleAvatar(
+                  radius: 70,
+                  backgroundImage: NetworkImage(locationImage),
+                ),
+                Container(
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.black54,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    place.location.address,
+                    style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
                 ),
               ],
             ),
